@@ -1,0 +1,27 @@
+from django.urls import path
+from .views import (
+    JobListView,
+    UserListView,
+    RegisterUserView,
+    JobCreateView,
+    JobDetailView,
+    JobUpdateDeleteView,
+)
+from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
+from .serializers import CustomerTokenObtainPairView
+
+urlpatterns = [
+    path("register/", RegisterUserView.as_view(), name="register"),
+    path("login/", CustomerTokenObtainPairView.as_view(), name="login"),
+    path("refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("verify/", TokenVerifyView.as_view(), name="token_verify"),
+    path("jobs/", JobListView.as_view(), name="job-list"),
+    path("jobs/create/", JobCreateView.as_view(), name="job-create"),
+    path("jobs/<int:pk>/", JobDetailView.as_view(), name="job-detail"),
+    path(
+        "jobs/<int:pk>/edit/",
+        JobUpdateDeleteView.as_view(),
+        name="job-update",
+    ),
+    path("users/", UserListView.as_view(), name="user-list"),
+]
