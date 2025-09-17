@@ -12,21 +12,25 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 from pathlib import Path
 from datetime import timedelta
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+env = environ.Env(
+    # set default values and types for variables
+    DEBUG=(bool, False)
+)
+environ.Env.read_env()
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-yjiu$tn9nr-bi$bv6u!%74peiycg=+rm67js0k9t)f+k&eiqn8"
+SECRET_KEY = env("SECRET_KEY")
+DEBUG = env("DEBUG")
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
-
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = list(env("ALLOWED_HOSTS"))
 
 
 # Application definition
@@ -78,10 +82,9 @@ WSGI_APPLICATION = "jobs_board.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
+    "default": env.db(
+        "DATABASE_URL", default="postgres://postgres:postgres@db:5432/postgres"
+    )
 }
 
 
