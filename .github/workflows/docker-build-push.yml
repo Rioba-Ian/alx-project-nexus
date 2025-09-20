@@ -46,7 +46,7 @@ jobs:
         uses: docker/build-push-action@v4
         with:
           context: .
-          file: ./Dockerfile
+          file: ./Dockerfile.prod
           push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
@@ -104,6 +104,8 @@ jobs:
         if: github.event_name != 'pull_request'
         run: |
           scp docker-compose.prod.yml ${{ secrets.SSH_USER }}@${{ secrets.DEPLOY_HOST }}:~/docker-compose.yml
+          scp Dockerfile.prod ${{ secrets.SSH_USER }}@${{ secrets.DEPLOY_HOST }}:~/Dockerfile.prod
+          scp entrypoint.sh ${{ secrets.SSH_USER }}@${{ secrets.DEPLOY_HOST }}:~/entrypoint.sh
           scp .env.prod.example ${{ secrets.SSH_USER }}@${{ secrets.DEPLOY_HOST }}:~/.env
           scp -r nginx ${{ secrets.SSH_USER }}@${{ secrets.DEPLOY_HOST }}:~/
 

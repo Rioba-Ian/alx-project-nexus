@@ -11,6 +11,7 @@ static/
 
 # Virtual Environment
 .env
+.env.**
 venv/
 env/
 

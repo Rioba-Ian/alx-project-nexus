@@ -2,6 +2,9 @@ version: '3.8'
 
 services:
   web:
+    build:
+      context: .
+      dockerfile: Dockerfile.prod
     image: ${DOCKER_USERNAME}/jobs-board:latest
     command: gunicorn jobs_board.wsgi:application --bind 0.0.0.0:8000
     volumes:
@@ -47,8 +50,8 @@ services:
       - static_volume:/home/app/staticfiles
       - media_volume:/home/app/mediafiles
     ports:
-      - "80:80"
-      - "443:443"
+      - '80:80'
+      - '443:443'
     depends_on:
       - web
     restart: unless-stopped
