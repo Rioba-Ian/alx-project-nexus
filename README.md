@@ -139,19 +139,69 @@ The project includes a fully automated CI/CD pipeline using GitHub Actions that 
 
 The project includes a GitHub Actions workflow for CI/CD that automatically builds, tests, and deploys the application.
 
-1. In your GitHub repository, go to Settings > Secrets and add the following secrets:
-   - `DOCKER_USERNAME`: Your Docker Hub username
-   - `DOCKER_PASSWORD`: Your Docker Hub password or access token
-   - `SSH_PRIVATE_KEY`: Your deployment server's SSH private key
-   - `SSH_USER`: Username for the deployment server
-   - `DEPLOY_HOST`: Hostname or IP address of your deployment server
+#### Setting Up GitHub Secrets
 
-2. The workflow will trigger automatically on:
-   - Pushes to the main branch
-   - New version tags (v1.0.0, v2.1.3, etc.)
-   - Manual workflow dispatch
+1. In your GitHub repository, go to Settings > Secrets and Variables > Actions > New repository secret
 
-3. For manual triggers, you can use the "Run workflow" button in the Actions tab of your GitHub repository.
+2. Add the following secrets:
+
+   | Secret Name       | Description                                                   | Example                                                                       |
+   | ----------------- | ------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+   | `DOCKER_USERNAME` | Your Docker Hub username                                      | `yourusername`                                                                |
+   | `DOCKER_PASSWORD` | Docker Hub password or access token (recommended)             | `dckr_pat_abcdefghijklmnopqrstuvwxyz`                                         |
+   | `SSH_PRIVATE_KEY` | Your deployment server's SSH private key (the entire content) | `-----BEGIN OPENSSH PRIVATE KEY-----\n...\n-----END OPENSSH PRIVATE KEY-----` |
+   | `SSH_USER`        | Username for the deployment server                            | `ubuntu` or `root`                                                            |
+   | `DEPLOY_HOST`     | Hostname or IP address of your deployment server              | `123.456.789.0`                                                               |
+
+#### Creating SSH Keys for Deployment
+
+To generate a new SSH key for your deployment:
+
+1. Generate a new SSH key pair:
+
+   ```bash
+   ssh-keygen -t ed25519 -C "github-actions-deploy" -f ~/.ssh/github_actions_deploy
+   ```
+
+2. Add the public key to your server's `authorized_keys`:
+
+   ```bash
+   cat ~/.ssh/github_actions_deploy.pub
+   # Copy the output and add it to ~/.ssh/authorized_keys on your server
+   ```
+
+3. Add the private key as a GitHub secret:
+
+   ```bash
+   cat ~/.ssh/github_actions_deploy
+   # Copy the entire output (including BEGIN and END lines) to the SSH_PRIVATE_KEY secret
+   ```
+
+4. Ensure the correct permissions on your server:
+   ```bash
+   chmod 700 ~/.ssh
+   chmod 600 ~/.ssh/authorized_keys
+   ```
+
+#### Workflow Triggers
+
+The workflow will trigger automatically on:
+
+- Pushes to the main branch
+- New version tags (v1.0.0, v2.1.3, etc.)
+- Manual workflow dispatch
+
+For manual triggers, you can use the "Run workflow" button in the Actions tab of your GitHub repository.
+
+#### Troubleshooting Deployment
+
+If you encounter SSH connection issues during deployment:
+
+1. Verify your `SSH_PRIVATE_KEY` format is correct (including newlines)
+2. Check that the public key is properly added to `~/.ssh/authorized_keys` on your server
+3. Ensure your server's SSH configuration allows key-based authentication
+4. Verify that your `SSH_USER` has the necessary permissions on the server
+5. Check firewall settings to ensure port 22 is accessible
 
 ### Deployment Options
 
