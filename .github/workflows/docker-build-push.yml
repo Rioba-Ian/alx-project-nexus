@@ -11,6 +11,7 @@ on:
 
 env:
   DOCKER_IMAGE: ${{ secrets.DOCKER_USERNAME }}/jobs-board
+  SECRET_KEY: ${{ secrets.SECRET_KEY }}
 
 jobs:
   build-and-push:
