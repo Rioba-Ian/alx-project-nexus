@@ -55,6 +55,7 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             DOCKER_BUILDKIT=1
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
 
   test:
     runs-on: ubuntu-latest
@@ -78,4 +79,5 @@ jobs:
       - name: Run tests
         run: |
           echo "Running tests..."
+          export DATABASE_URL=${{ secrets.DATABASE_URL }}
           python manage.py test

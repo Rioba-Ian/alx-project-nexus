@@ -82,10 +82,16 @@ WSGI_APPLICATION = "jobs_board.wsgi.application"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    "default": env.db(
-        "DATABASE_URL", default="postgres://postgres:postgres@db:5432/postgres"
-    )
+    "default": env.db("DATABASE_URL")
 }
+
+# Add connection pooling options for production external database
+if not DEBUG:
+    DATABASES["default"]["CONN_MAX_AGE"] = 60  # 60 seconds connection persistence
+    DATABASES["default"]["OPTIONS"] = {
+        "connect_timeout": 10,
+        "sslmode": "require",  # Use SSL in production
+    }
 
 
 # Password validation

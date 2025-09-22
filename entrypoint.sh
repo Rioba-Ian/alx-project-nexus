@@ -1,21 +1,9 @@
 #!/bin/bash
 set -e
 
-# Function to wait for PostgreSQL to be ready
-wait_for_postgres() {
-  echo "Waiting for PostgreSQL..."
-  while ! nc -z db 5432; do
-    sleep 0.5
-  done
-  echo "PostgreSQL started"
-}
-
 # Create static and media directories if they don't exist
 mkdir -p /app/staticfiles
 mkdir -p /app/mediafiles
-
-# Wait for PostgreSQL
-wait_for_postgres
 
 # Apply database migrations
 echo "Applying database migrations..."

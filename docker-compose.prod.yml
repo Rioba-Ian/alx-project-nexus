@@ -14,31 +14,12 @@ services:
       - 8000
     env_file:
       - .env.prod
-    depends_on:
-      db:
-        condition: service_healthy
     healthcheck:
       test: ['CMD', 'curl', '-f', 'http://localhost:8000/swagger/']
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 20s
-    restart: unless-stopped
-    networks:
-      - jobs_board_network
-
-  db:
-    image: postgres:15
-    volumes:
-      - postgres_data_prod:/var/lib/postgresql/data/
-    env_file:
-      - .env.prod.db
-    healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
     restart: unless-stopped
     networks:
       - jobs_board_network
@@ -59,7 +40,6 @@ services:
       - jobs_board_network
 
 volumes:
-  postgres_data_prod:
   static_volume:
   media_volume:
 
