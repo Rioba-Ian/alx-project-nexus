@@ -1,4 +1,3 @@
-from rest_framework_simplejwt.tokens import Token
 from .models import CustomUser, Job
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -52,12 +51,7 @@ class JobSerializer(serializers.ModelSerializer):
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
-    @classmethod
-    def get_token(cls, user):
-        token = super().get_token(user)
-        token["email"] = user.email
-        token["role"] = user.role
-        return token
+    username_field = CustomUser.USERNAME_FIELD
 
     def validate(self, attrs):
         credentials = {
@@ -66,6 +60,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         }
 
         return super().validate(credentials)
+
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        token["email"] = user.email
+        token["role"] = user.role
+        return token
 
 
 class CustomerTokenObtainPairView(TokenObtainPairView):

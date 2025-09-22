@@ -13,34 +13,68 @@ class TenPerPagePagination(PageNumberPagination):
 
 
 # Create your views here.
-class JobListView(generics.ListAPIView):
-    queryset = Job.objects.filter(is_active=True).order_by("-created_at")
-    serializer_class = JobSerializer
+class JobListView(APIView):
     permission_classes = [AllowAny]
-    pagination_class = TenPerPagePagination
+
+    def get(self, request):
+        jobs = Job.objects.filter(is_active=True).order_by("-created_at")
+        paginator = TenPerPagePagination()
+        result_page = paginator.paginate_queryset(jobs, request)
+        serializer = JobSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
 
-class JobDetailView(generics.RetrieveAPIView):
-    queryset = Job.objects.all()
-    serializer_class = JobSerializer
+class JobDetailView(APIView):
     permission_classes = [AllowAny]
-    lookup_field = "pk"
+
+    def get(self, request, pk):
+        try:
+            job = Job.objects.get(pk=pk)
+        except Job.DoesNotExist:
+            return Response(
+                {"error": "Job not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        serializer = JobSerializer(job)
+        return Response(serializer.data)
 
 
-class JobCreateView(generics.CreateAPIView):
-    queryset = Job.objects.all()
-    serializer_class = JobSerializer
+class JobCreateView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUserRole]
 
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+    def post(self, request):
+        serializer = JobSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save(posted_by=request.user)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class JobUpdateDeleteView(generics.RetrieveUpdateDestroyAPIView):
-    queryset = Job.objects.all()
-    serializer_class = JobSerializer
+class JobUpdateView(APIView):
     permission_classes = [IsAuthenticated, IsAdminUserRole]
-    lookup_field = "pk"
+
+    def put(self, request, pk):
+        try:
+            job = Job.objects.get(pk=pk)
+        except Job.DoesNotExist:
+            return Response(
+                {"error": "Job not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+
+        serializer = JobSerializer(job, data=request.data, partial=False)
+        if serializer.is_valid():
+            serializer.save(posted_by=request.user)  # maintain link
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request, pk):
+        try:
+            job = Job.objects.get(pk=pk)
+        except Job.DoesNotExist:
+            return Response(
+                {"error": "Job not found"}, status=status.HTTP_404_NOT_FOUND
+            )
+        job.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class UserListView(generics.ListAPIView):
