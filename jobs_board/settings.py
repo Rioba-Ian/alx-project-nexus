@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
+import os
 from datetime import timedelta
 import environ
 
@@ -30,7 +31,7 @@ environ.Env.read_env()
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ["*"]
 
 
 # Application definition
@@ -46,10 +47,12 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "drf_yasg",
     "config",
+    "whitenoise.runserver_nostatic",
 ]
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -81,9 +84,7 @@ WSGI_APPLICATION = "jobs_board.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-DATABASES = {
-    "default": env.db("DATABASE_URL")
-}
+DATABASES = {"default": env.db("DATABASE_URL")}
 
 # Add connection pooling options for production external database
 if not DEBUG:
@@ -131,6 +132,13 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
+
+# Add drf_spectacular's static files to STATICFILES_DIRS
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+    os.path.join(BASE_DIR, "templates"),  # If using custom templates
+]
+
 # Media files
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "mediafiles"
@@ -158,4 +166,13 @@ REST_FRAMEWORK = {
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+}
+
+SPECTACULAR_SETTINGS = {
+    # ... other settings
+    "SERVE_SWAGGER_UI_ASSETS": True,
+    # or you can use a CDN for assets
+    # 'SWAGGER_UI_DIST': '//cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui-bundle.js',
+    # 'SWAGGER_UI_STANDALONE_JS': '//cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui-standalone-preset.js',
+    # 'SWAGGER_UI_CSS': '//cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui.css',
 }
