@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "drf_yasg",
     "config",
     "whitenoise.runserver_nostatic",
+    "django-filters",
 ]
 
 MIDDLEWARE = [
@@ -140,7 +141,7 @@ STATICFILES_DIRS = [
 ]
 
 # Media files
-MEDIA_URL = "media/"
+MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "mediafiles"
 
 # Default primary key field type
@@ -151,6 +152,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "config.CustomUser"
 
 REST_FRAMEWORK = {
+    "DEFAULT_FILTER_BACKENDS": [
+        "django_filters.rest_framework.DjangoFilterBackend",
+        "rest_framework.filters.SearchFilter",
+        "rest_framework.filters.OrderingFilter",
+    ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
