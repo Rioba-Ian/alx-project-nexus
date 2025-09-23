@@ -1,5 +1,6 @@
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
+from django.shortcuts import redirect
 from .serializers import JobSerializer, UserSerializer
 from rest_framework.response import Response
 from .models import Job, CustomUser
@@ -13,6 +14,16 @@ class TenPerPagePagination(PageNumberPagination):
 
 
 # Create your views here.
+
+
+# Root view
+class RootView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        return redirect("schema-swagger-ui")
+
+
 class JobListView(APIView):
     permission_classes = [AllowAny]
 

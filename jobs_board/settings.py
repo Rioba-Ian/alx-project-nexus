@@ -176,3 +176,15 @@ SPECTACULAR_SETTINGS = {
     # 'SWAGGER_UI_STANDALONE_JS': '//cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui-standalone-preset.js',
     # 'SWAGGER_UI_CSS': '//cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui.css',
 }
+
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header",
+            "description": 'Enter JWT token in the format: "Bearer <token>"',
+        }
+    },
+    "USE_SESSION_AUTH": False,
+}
