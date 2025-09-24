@@ -32,9 +32,14 @@ environ.Env.read_env()
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 
-CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
 
 ALLOWED_HOSTS = ["*"]
+CORS_ALLOWED_ORIGINS = [
+    "https://alx-project-nexus-s0je.onrender.com",
+    "https://alx-projectnexus-auktnw-ad7b69-49-12-198-51.traefik.me",
+    "https://jobs-board-alx.riobaian.space",
+    "http://localhost:8000",
+]
 
 
 # Application definition
