@@ -20,10 +20,10 @@ router.register(r"favorites", FavoriteViewSet, basename="favorites")
 
 
 urlpatterns = [
-    path("", include(router.urls)),
+    path("users/", UserListView.as_view(), name="user-list"),
     path("register/", RegisterUserView.as_view(), name="register"),
     path("login/", CustomerTokenObtainPairView.as_view(), name="login"),
+    path("", include(router.urls)),
     path("refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("verify/", TokenVerifyView.as_view(), name="token_verify"),
-    path("users/", UserListView.as_view(), name="user-list"),
 ]
