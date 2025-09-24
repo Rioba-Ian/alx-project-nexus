@@ -32,6 +32,8 @@ environ.Env.read_env()
 SECRET_KEY = env("SECRET_KEY")
 DEBUG = env("DEBUG")
 
+CORS_ALLOWED_ORIGINS = env.list("CORS_ALLOWED_ORIGINS", default=[])
+
 ALLOWED_HOSTS = ["*"]
 
 
