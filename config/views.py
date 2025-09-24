@@ -1,5 +1,6 @@
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
+from rest_framework.response import Response
 from rest_framework import viewsets, mixins
 from django.shortcuts import redirect
 from .serializers import (
@@ -35,7 +36,26 @@ class RootView(APIView):
     permission_classes = [AllowAny]
 
     def get(self, request):
-        return redirect("schema-swagger-ui")
+        return Response(
+            {
+                "message": "Welcome to Jobs Board API",
+                "version": "v0.0.1",
+                "description": """Jobs can be viewed publicly and once logged in, only admins can post jobs, view applications to their companies, and update the status of an applicant's application. The superadmin is the one who can create an admin for a company.""",
+                "endpoints": {
+                    "admin_panel": "/admin/",
+                    "login": "/api/login/",
+                    "register": "/api/register/",
+                    "docs": "/api/docs/",
+                    "jobs": "/api/jobs/",
+                    "applications": "/api/applications/",
+                    "favorites": "/api/favorites/",
+                    "companies": "/api/companies/",
+                    "users": "/api/users/",
+                    "swagger": "/api/schema/",
+                    "redoc": "/api/schema/redoc/",
+                },
+            }
+        )
 
 
 @extend_schema(tags=["companies"])
