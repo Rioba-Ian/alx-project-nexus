@@ -1,4 +1,4 @@
-from .models import CustomUser, Job
+from .models import CustomUser, Job, Company, JobApplication, Favorite
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -7,18 +7,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
-        fields = [
-            "id",
-            "username",
-            "password",
-            "email",
-            "phone",
-            "role",
-        ]
-        extra_kwargs = {
-            "password": {"write_only": True},
-            "role": {"read_only": True},
-        }
+        fields = ["id", "username", "email", "phone", "role"]
+        read_only_fields = ["role"]
 
     def create(self, validated_data):
         user = CustomUser(
@@ -31,8 +21,82 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
+class CompanySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Company
+        fields = [
+            "id",
+            "name",
+            "description",
+            "website",
+            "owner",
+            "created_at",
+        ]
+
+
+class JobCreateSerializer(serializers.ModelSerializer):
+    company_id = serializers.PrimaryKeyRelatedField(
+        write_only=True,
+        source="company",
+        queryset=Company.objects.all(),
+    )
+
+    class Meta:
+        model = Job
+        fields = [
+            "id",
+            "title",
+            "description",
+            "company_id",
+            "location",
+            "is_active",
+        ]
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        validated_data["posted_by"] = user
+        return super().create(validated_data)
+
+
+class JobApplicationSerializer(serializers.ModelSerializer):
+    applicant = serializers.StringRelatedField(read_only=True)
+    resume = serializers.FileField(required=False)
+
+    class Meta:
+        model = JobApplication
+        fields = [
+            "id",
+            "job",
+            "applicant",
+            "resume",
+            "cover_letter",
+            "status",
+            "created_at",
+        ]
+        read_only_fields = ["status", "applicant", "created_at"]
+
+    def create(self, validated_data):
+        user = self.context["request"].user
+        validated_data["applicant"] = user
+        return super().create(validated_data)
+
+
+class JobApplicationUpdateSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = JobApplication
+        fields = ["status"]
+
+
 class JobSerializer(serializers.ModelSerializer):
-    created_by = serializers.StringRelatedField(read_only=True)
+    company = CompanySerializer(read_only=True)
+    company_id = serializers.PrimaryKeyRelatedField(
+        write_only=True,
+        source="company",
+        queryset=Company.objects.all(),
+    )
+
+    posted_by = serializers.StringRelatedField(read_only=True)
 
     class Meta:
         model = Job
@@ -41,13 +105,27 @@ class JobSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "company",
+            "company_id",
             "location",
             "posted_by",
             "created_at",
             "updated_at",
             "is_active",
-            "created_by",
         ]
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField(read_only=True)
+    job = serializers.StringRelatedField(read_only=True)
+    job_id = serializers.PrimaryKeyRelatedField(
+        write_only=True,
+        source="job",
+        queryset=Job.objects.all(),
+    )
+
+    class Meta:
+        model = Favorite
+        fields = ["id", "user", "job", "job_id", "created_at"]
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):

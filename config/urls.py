@@ -1,25 +1,29 @@
-from django.urls import path
+from django.urls import path, include
 from .views import (
-    JobListView,
     UserListView,
     RegisterUserView,
-    JobCreateView,
-    JobDetailView,
-    JobUpdateView,
+    JobViewSet,
+    CompanyViewSet,
+    FavoriteViewSet,
+    JobApplicationViewSet,
 )
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from .serializers import CustomerTokenObtainPairView
 from django.views.generic import RedirectView
+from rest_framework.routers import DefaultRouter
+
+router = DefaultRouter()
+router.register(r"companies", CompanyViewSet, basename="companies")
+router.register(r"jobs", JobViewSet, basename="jobs")
+router.register(r"applications", JobApplicationViewSet, basename="applications")
+router.register(r"favorites", FavoriteViewSet, basename="favorites")
+
 
 urlpatterns = [
-    path("", RedirectView.as_view(url="jobs/"), name="root"),
+    path("", include(router.urls)),
     path("register/", RegisterUserView.as_view(), name="register"),
     path("login/", CustomerTokenObtainPairView.as_view(), name="login"),
     path("refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("verify/", TokenVerifyView.as_view(), name="token_verify"),
-    path("jobs/", JobListView.as_view(), name="job-list"),
-    path("jobs/create/", JobCreateView.as_view(), name="job-create"),
-    path("jobs/<int:pk>/", JobUpdateView.as_view(), name="job-update-delete"),
-    path("jobs/<int:pk>/", JobDetailView.as_view(), name="job-detail"),
     path("users/", UserListView.as_view(), name="user-list"),
 ]

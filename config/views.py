@@ -1,12 +1,26 @@
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.views import APIView
+from rest_framework import viewsets, mixins
 from django.shortcuts import redirect
-from .serializers import JobSerializer, UserSerializer
-from rest_framework.response import Response
-from .models import Job, CustomUser
-from rest_framework import generics, status
+from .serializers import (
+    JobSerializer,
+    UserSerializer,
+    CompanySerializer,
+    JobCreateSerializer,
+    JobApplicationSerializer,
+    JobApplicationUpdateSerializer,
+    FavoriteSerializer,
+)
+from .models import Job, CustomUser, JobApplication, Favorite
+from rest_framework import generics
 from rest_framework.pagination import PageNumberPagination
-from .permissions import IsAdminUserRole
+from .permissions import IsAdminUserRole, IsCompanyOwnerOrAdmin
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.filters import OrderingFilter, SearchFilter
+from rest_framework.exceptions import PermissionDenied, ValidationError
+from rest_framework.parsers import MultiPartParser, FormParser
+from django.db import models
+from drf_spectacular.utils import extend_schema
 
 
 class TenPerPagePagination(PageNumberPagination):
@@ -24,76 +38,134 @@ class RootView(APIView):
         return redirect("schema-swagger-ui")
 
 
-class JobListView(APIView):
-    permission_classes = [AllowAny]
+@extend_schema(tags=["companies"])
+class CompanyViewSet(viewsets.ModelViewSet):
+    queryset = Job.objects.all().select_related("owner")
+    serializer_class = CompanySerializer
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    search_fields = ["name", "description", "website"]
+    ordering_fields = ["name", "created_at"]
 
-    def get(self, request):
-        jobs = Job.objects.filter(is_active=True).order_by("-created_at")
-        paginator = TenPerPagePagination()
-        result_page = paginator.paginate_queryset(jobs, request)
-        serializer = JobSerializer(result_page, many=True)
-        return paginator.get_paginated_response(serializer.data)
+    def get_permissions(self):
+        if self.action == "create":
+            return [IsAuthenticated()]
+        if self.action in ("update", "partial_update", "destroy"):
+            return [IsCompanyOwnerOrAdmin()]
+        return [AllowAny()]
+
+    def perform_create(self, serializer):
+        serializer.save(owner=self.request.user)
 
 
-class JobDetailView(APIView):
-    permission_classes = [AllowAny]
+@extend_schema(tags=["jobs"])
+class JobViewSet(viewsets.ModelViewSet):
+    queryset = Job.objects.select_related("company", "posted_by")
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ["company__id", "location", "is_active"]
+    search_fields = [
+        "title",
+        "description",
+        "company__name",
+        "location",
+        "posted_by__email",
+    ]
+    ordering_fields = ["title", "created_at"]
 
-    def get(self, request, pk):
-        try:
-            job = Job.objects.get(pk=pk)
-        except Job.DoesNotExist:
-            return Response(
-                {"error": "Job not found"}, status=status.HTTP_404_NOT_FOUND
+    def get_serializer_class(self):
+        if self.action in ("create", "update", "partial_update"):
+            return JobCreateSerializer
+        return JobSerializer
+
+    def get_permissions(self):
+        if self.action == "create":
+            return [IsAuthenticated(), IsCompanyOwnerOrAdmin()]
+        if self.action in ("update", "partial_update", "destroy"):
+            return [IsAuthenticated(), IsCompanyOwnerOrAdmin()]
+        return [AllowAny()]
+
+    def perform_create(self, serializer):
+        company = serializer.validated_data.get("company")
+        user = self.request.user
+        if not (company.owner == user or user.role == "admin"):
+            raise PermissionDenied(
+                "You must be the company owner or admin to create a job"
             )
-        serializer = JobSerializer(job)
-        return Response(serializer.data)
+        serializer.save(posted_by=self.request.user)
 
 
-class JobCreateView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUserRole]
+@extend_schema(tags=["applications"])
+class JobApplicationViewSet(
+    viewsets.GenericViewSet,
+    mixins.CreateModelMixin,
+    mixins.RetrieveModelMixin,
+    mixins.ListModelMixin,
+    mixins.UpdateModelMixin,
+):
+    queryset = JobApplication.objects.select_related("job", "applicant")
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ["job__id", "status", "applicant__id"]
+    search_fields = ["job__title", "applicant__email"]
+    ordering_fields = ["created_at"]
+    parser_classes = [MultiPartParser, FormParser]
 
-    def post(self, request):
-        serializer = JobSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save(posted_by=request.user)
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get_serializer_class(self):
+        if self.action in ("update", "partial_update"):
+            return JobApplicationUpdateSerializer
+        return JobApplicationSerializer
+
+    def get_permissions(self):
+        user = self.request.user
+        qs = super().get_queryset()
+
+        if not user.is_authenticated:
+            return qs.none()
+        if user.is_superuser or getattr(user, "role", None) == "admin":
+            return qs
+
+        company_ids = user.companies.values_list("id", flat=True)
+        return qs.filter(
+            models.Q(applicant=user) | models.Q(job__company__in=company_ids)
+        )
+
+    def perform_create(self, serializer):
+        job = serializer.validated_data["job"]
+        user = self.request.user
+        if not job.is_active:
+            raise ValidationError("Job is not active")
+        serializer.save(applicant=user)
 
 
-class JobUpdateView(APIView):
-    permission_classes = [IsAuthenticated, IsAdminUserRole]
+@extend_schema(tags=["favorites"])
+class FavoriteViewSet(
+    viewsets.GenericViewSet,
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.DestroyModelMixin,
+):
+    serializer_class = FavoriteSerializer
+    queryset = Favorite.objects.select_related("job", "user").all()
+    filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
+    filterset_fields = ["job__id", "user__id"]
+    search_fields = ["job__title", "job__company__name", "user__email"]
 
-    def put(self, request, pk):
-        try:
-            job = Job.objects.get(pk=pk)
-        except Job.DoesNotExist:
-            return Response(
-                {"error": "Job not found"}, status=status.HTTP_404_NOT_FOUND
-            )
+    def get_permissions(self):
+        return [IsAuthenticated()]
 
-        serializer = JobSerializer(job, data=request.data, partial=False)
-        if serializer.is_valid():
-            serializer.save(posted_by=request.user)  # maintain link
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def get_queryset(self):
+        return self.queryset.filter(user=self.request.user)
 
-    def delete(self, request, pk):
-        try:
-            job = Job.objects.get(pk=pk)
-        except Job.DoesNotExist:
-            return Response(
-                {"error": "Job not found"}, status=status.HTTP_404_NOT_FOUND
-            )
-        job.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
 
 
+@extend_schema(tags=["users"])
 class UserListView(generics.ListAPIView):
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
     permission_classes = [IsAuthenticated, IsAdminUserRole]
 
 
+@extend_schema(tags=["users"])
 class RegisterUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]

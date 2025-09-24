@@ -11,7 +11,8 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
 from pathlib import Path
-import os
+
+# import os
 from datetime import timedelta
 import environ
 
@@ -45,10 +46,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt",
-    "drf_yasg",
     "config",
+    "drf_spectacular",
     "whitenoise.runserver_nostatic",
-    "django-filters",
+    "storages",
+    "django_filters",
 ]
 
 MIDDLEWARE = [
@@ -130,19 +132,19 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
-STATIC_ROOT = BASE_DIR / "staticfiles"
+# STATIC_URL = "static/"
+# STATIC_ROOT = BASE_DIR / "staticfiles"
 
 
-# Add drf_spectacular's static files to STATICFILES_DIRS
-STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, "static"),
-    os.path.join(BASE_DIR, "templates"),  # If using custom templates
-]
+# # Add drf_spectacular's static files to STATICFILES_DIRS
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, "static"),
+#     os.path.join(BASE_DIR, "templates"),  # If using custom templates
+# ]
 
-# Media files
-MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "mediafiles"
+# # Media files
+# MEDIA_URL = "/media/"
+# MEDIA_ROOT = BASE_DIR / "mediafiles"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -152,6 +154,7 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "config.CustomUser"
 
 REST_FRAMEWORK = {
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
         "rest_framework.filters.SearchFilter",
@@ -175,12 +178,18 @@ SIMPLE_JWT = {
 }
 
 SPECTACULAR_SETTINGS = {
-    # ... other settings
-    "SERVE_SWAGGER_UI_ASSETS": True,
-    # or you can use a CDN for assets
-    # 'SWAGGER_UI_DIST': '//cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui-bundle.js',
-    # 'SWAGGER_UI_STANDALONE_JS': '//cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui-standalone-preset.js',
-    # 'SWAGGER_UI_CSS': '//cdn.jsdelivr.net/npm/swagger-ui-dist@3/swagger-ui.css',
+    "TITLE": "Jobs Board API",
+    "DESCRIPTION": "Comprehensive API for Jobs Board and Jobs Board Admin",
+    "VERSION": "0.0.1",
+    "CONTACT": {
+        "name": "API Support",
+        "email": "support@riobaian.space.com",
+    },
+    "LICENSE": {
+        "name": "MIT License",
+        "url": "https://opensource.org/licenses/MIT",
+    },
+    "SERVE_INCLUDE_SCHEMA": False,  # For production, consider setting to False
 }
 
 SWAGGER_SETTINGS = {
@@ -194,3 +203,59 @@ SWAGGER_SETTINGS = {
     },
     "USE_SESSION_AUTH": False,
 }
+
+
+# We're using R2 cloudflare storage instead
+
+if DEBUG:
+    # Local development storage settings
+    STATICFILES_STORAGE = "django.contrib.staticfiles.storage.StaticFilesStorage"
+    DEFAULT_FILE_STORAGE = "django.core.files.storage.FileSystemStorage"
+
+    STATIC_URL = "static/"
+    MEDIA_URL = "media/"
+
+    STATIC_ROOT = BASE_DIR / "staticfiles"
+    MEDIA_ROOT = BASE_DIR / "mediafiles"
+
+
+else:
+    DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+    STATICFILES_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
+
+    # 1) Pull credentials & bucket from env
+    R2_BUCKET = env.str("R2_BUCKET_NAME")
+    R2_ENDPOINT = env.str("R2_ENDPOINT_URL").rstrip(
+        "/"
+    )  # e.g. https://`<ACCOUNT_ID>`.r2.cloudflarestorage.com
+
+    # 2) Common OPTIONS for both storage backends
+    R2_OPTIONS = {
+        "access_key": env.str("R2_ACCESS_KEY_ID"),
+        "secret_key": env.str("R2_SECRET_ACCESS_KEY"),
+        "bucket_name": R2_BUCKET,
+        "endpoint_url": R2_ENDPOINT,
+        "region_name": "auto",
+        "signature_version": "s3v4",
+        "addressing_style": "path",  # `<endpoint>`/`<bucket>`/`<key>`
+        "default_acl": "public-read",
+    }
+
+    # 3) Tell Django 5.1+ about your storages
+    STORAGES = {
+        "default": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "OPTIONS": R2_OPTIONS,
+            "LOCATION": "media",  # objects under /media/
+        },
+        "staticfiles": {
+            "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+            "OPTIONS": R2_OPTIONS,
+            "LOCATION": "static",  # objects under /static/
+        },
+    }
+
+    # 4) URLs your templates will use
+    STATIC_URL = f"https://{R2_ENDPOINT.replace('https://','')}/{R2_BUCKET}/static/"
+    MEDIA_URL = f"https://{R2_ENDPOINT.replace('https://','')}/{R2_BUCKET}/media/"

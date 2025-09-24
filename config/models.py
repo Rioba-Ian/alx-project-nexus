@@ -34,10 +34,28 @@ class CustomUser(AbstractUser):
         return self.email
 
 
+class Company(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    website = models.URLField(blank=True, null=True)
+    owner = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="companies"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.name
+
+
 class Job(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
-    company = models.CharField(max_length=100)
+    company = models.ForeignKey(
+        Company,
+        on_delete=models.CASCADE,
+        related_name="jobs",
+    )
     location = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -46,5 +64,61 @@ class Job(models.Model):
     )
     is_active = models.BooleanField(default=True)
 
+    class Meta:
+        ordering = ["-created_at"]
+
     def __str__(self):
-        return self.title
+        return f"{self.title} - {self.company.name}"
+
+
+class JobApplication(models.Model):
+    STATUS_CHOICES = [
+        ("applied", "Applied"),
+        ("review", "Under Review"),
+        ("interview", "Interview"),
+        ("rejected", "Rejected"),
+        ("hired", "Hired"),
+    ]
+
+    job = models.ForeignKey(
+        Job,
+        on_delete=models.CASCADE,
+        related_name="applications",
+    )
+    applicant = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="applications"
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=STATUS_CHOICES,
+        default="applied",
+    )
+    resume = models.FileField(upload_to="resumes/", blank=True, null=True)
+    cover_letter = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("job", "applicant")
+
+    def __str__(self):
+        return f"{self.job.title} - {self.applicant.email}"
+
+
+class Favorite(models.Model):
+    user = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE, related_name="favorites"
+    )
+    job = models.ForeignKey(
+        Job,
+        on_delete=models.CASCADE,
+        related_name="favorites",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "job")
+
+    def __str__(self):
+        return f"{self.user.email} - {self.job.title}"
