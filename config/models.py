@@ -39,7 +39,9 @@ class Company(models.Model):
     description = models.TextField()
     website = models.URLField(blank=True, null=True)
     owner = models.ForeignKey(
-        CustomUser, on_delete=models.CASCADE, related_name="companies"
+        "config.CustomUser",
+        on_delete=models.CASCADE,
+        related_name="companies",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -12,7 +12,7 @@ from .serializers import (
     JobApplicationUpdateSerializer,
     FavoriteSerializer,
 )
-from .models import Job, CustomUser, JobApplication, Favorite
+from .models import Job, CustomUser, JobApplication, Favorite, Company
 from rest_framework import generics
 from rest_framework.pagination import PageNumberPagination
 from .permissions import IsAdminUserRole, IsCompanyOwnerOrAdmin
@@ -60,7 +60,7 @@ class RootView(APIView):
 
 @extend_schema(tags=["companies"])
 class CompanyViewSet(viewsets.ModelViewSet):
-    queryset = Job.objects.all().select_related("owner")
+    queryset = Company.objects.all().select_related("owner")
     serializer_class = CompanySerializer
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
     search_fields = ["name", "description", "website"]
