@@ -13,17 +13,23 @@ This project creates a jobs board listing that allows users to access, filter an
     - [Table of Contents](#table-of-contents)
     - [Key Technologies](#key-technologies)
     - [Features](#features)
+    - [Interacting with the API](#interacting-with-the-api)
     - [Learning Areas](#learning-areas)
-    - [Backend Development with Django](#backend-development-with-django)
-    - [API Design and REST Best Practices](#api-design-and-rest-best-practices)
-    - [Authentication and Authorization](#authentication-and-authorization)
-    - [Database Design and Management](#database-design-and-management)
-    - [Docker and Containerization](#docker-and-containerization)
-    - [API Documentation](#api-documentation)
-    - [CI/CD Pipeline](#cicd-pipeline)
-      - [Pipeline Features](#pipeline-features)
-      - [Workflow Steps](#workflow-steps)
+      - [Backend Development with Django](#backend-development-with-django)
+      - [API Design and REST Best Practices](#api-design-and-rest-best-practices)
+      - [Authentication and Authorization](#authentication-and-authorization)
+      - [Database Design and Management](#database-design-and-management)
+      - [Docker and Containerization](#docker-and-containerization)
+      - [API Documentation](#api-documentation)
+      - [CI/CD Pipeline](#cicd-pipeline)
+        - [Pipeline Features](#pipeline-features)
+        - [Workflow Steps](#workflow-steps)
     - [Setup and Installation](#setup-and-installation)
+    - [CI/CD Pipeline Setup](#cicd-pipeline-setup)
+      - [Setting Up GitHub Secrets](#setting-up-github-secrets)
+      - [Creating SSH Keys for Deployment](#creating-ssh-keys-for-deployment)
+      - [Workflow Triggers](#workflow-triggers)
+      - [Troubleshooting Deployment](#troubleshooting-deployment)
     - [Deployment Options](#deployment-options)
     - [Contributing](#contributing)
     - [License](#license)
@@ -45,6 +51,145 @@ This project creates a jobs board listing that allows users to access, filter an
 - RESTful API design
 - Comprehensive API documentation
 - Containerized development environment
+
+### Interacting with the API
+
+The Jobs Board API provides comprehensive endpoints for job management with role-based access control. All API endpoints require authentication except for viewing public job listings.
+
+#### Authentication Flow
+
+1. **Register a new user:**
+
+   ```bash
+   curl -X POST "http://localhost:8000/api/register/" \
+   -H "Content-Type: application/json" \
+   -d '{
+     "username": "john_doe",
+     "email": "john@example.com",
+     "password": "securepassword123"
+   }'
+   ```
+
+2. **Login to get JWT tokens:**
+   ```bash
+   curl -X POST "http://localhost:8000/api/login/" \
+   -H "Content-Type: application/json" \
+   -d '{
+     "email": "john@example.com",
+     "password": "securepassword123"
+   }'
+   ```
+   _Use the returned `access` token in subsequent requests_
+
+#### API Usage Examples
+
+##### 1. View Public Jobs (No Authentication Required)
+
+```bash
+curl -X GET "http://localhost:8000/api/jobs/" \
+-H "Content-Type: application/json"
+```
+
+##### 2. Create Company (Authenticated Users)
+
+```bash
+curl -X POST "http://localhost:8000/api/companies/" \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer <your_access_token>" \
+-d '{
+  "name": "Tech Corp Inc",
+  "description": "Leading technology solutions provider",
+  "website": "https://techcorp.com"
+}'
+```
+
+##### 3. Post Job (Company Owner or Admin)
+
+```bash
+curl -X POST "http://localhost:8000/api/jobs/" \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer <your_access_token>" \
+-d '{
+  "title": "Senior Python Developer",
+  "description": "We are looking for an experienced Python developer...",
+  "company_id": 1,
+  "location": "Remote",
+  "is_active": true
+}'
+```
+
+##### 4. Apply for Job (Authenticated Users)
+
+```bash
+curl -X POST "http://localhost:8000/api/applications/" \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer <your_access_token>" \
+-d '{
+  "job": 1,
+  "cover_letter": "I am very interested in this position..."
+}'
+```
+
+##### 5. View Applications (Company Owner or Admin)
+
+```bash
+curl -X GET "http://localhost:8000/api/applications/" \
+-H "Authorization: Bearer <company_owner_token>"
+```
+
+##### 6. Update Application Status (Company Owner or Admin)
+
+```bash
+curl -X PATCH "http://localhost:8000/api/applications/1/" \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer <company_owner_token>" \
+-d '{"status": "interview"}'
+```
+
+##### 7. Add Job to Favorites
+
+```bash
+curl -X POST "http://localhost:8000/api/favorites/" \
+-H "Content-Type: application/json" \
+-H "Authorization: Bearer <your_access_token>" \
+-d '{"job_id": 1}'
+```
+
+##### 8. View User's Favorite Jobs
+
+```bash
+curl -X GET "http://localhost:8000/api/favorites/" \
+-H "Authorization: Bearer <your_access_token>"
+```
+
+##### 9. Search and Filter Jobs
+
+```bash
+# Search jobs by title or company
+curl -X GET "http://localhost:8000/api/jobs/?search=python" \
+-H "Authorization: Bearer <your_access_token>"
+
+# Filter by location
+curl -X GET "http://localhost:8000/api/jobs/?location=Remote" \
+-H "Authorization: Bearer <your_access_token>"
+
+# Filter by company
+curl -X GET "http://localhost:8000/api/jobs/?company__id=1" \
+-H "Authorization: Bearer <your_access_token>"
+```
+
+#### API Documentation
+
+- **Swagger UI**: http://localhost:8000/api/docs/
+- **ReDoc**: http://localhost:8000/api/schema/redoc/
+- **OpenAPI Schema**: http://localhost:8000/api/schema/
+
+#### Role-Based Access Control
+
+- **Public Users**: Can view active job listings
+- **Authenticated Users**: Can create companies, apply for jobs, add favorites
+- **Company Owners**: Can post jobs for their companies, view applications
+- **Admins**: Can manage all companies and jobs, update application statuses
 
 ### Learning Areas
 
@@ -220,6 +365,7 @@ The project supports multiple deployment options:
    ```
 
 3. **Automated Deployment via CI/CD**:
+
    - Push to the main branch or create a new version tag
    - GitHub Actions will automatically deploy to your server
 

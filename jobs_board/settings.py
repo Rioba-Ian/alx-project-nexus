@@ -34,11 +34,24 @@ DEBUG = env("DEBUG")
 
 
 ALLOWED_HOSTS = ["*"]
+
+# CSRF trusted origins for ngrok and other development servers
+CSRF_TRUSTED_ORIGINS = [
+    "https://alx-project-nexus-s0je.onrender.com",
+    "https://alx-projectnexus-auktnw-ad7b69-49-12-198-51.traefik.me",
+    "https://jobs-board-alx.riobaian.space",
+    "http://localhost:8000",
+    "https://*.ngrok-free.app",
+    "https://*.ngrok.io",
+]
+
 CORS_ALLOWED_ORIGINS = [
     "https://alx-project-nexus-s0je.onrender.com",
     "https://alx-projectnexus-auktnw-ad7b69-49-12-198-51.traefik.me",
     "https://jobs-board-alx.riobaian.space",
     "http://localhost:8000",
+    "https://*.ngrok-free.app",
+    "https://*.ngrok.io",
 ]
 
 

@@ -32,6 +32,9 @@ class TenPerPagePagination(PageNumberPagination):
 
 
 # Root view
+@extend_schema(
+    tags=["root"],
+)
 class RootView(APIView):
     permission_classes = [AllowAny]
 
@@ -58,7 +61,9 @@ class RootView(APIView):
         )
 
 
-@extend_schema(tags=["companies"])
+@extend_schema(
+    tags=["companies"],
+)
 class CompanyViewSet(viewsets.ModelViewSet):
     queryset = Company.objects.all().select_related("owner")
     serializer_class = CompanySerializer
@@ -77,7 +82,9 @@ class CompanyViewSet(viewsets.ModelViewSet):
         serializer.save(owner=self.request.user)
 
 
-@extend_schema(tags=["jobs"])
+@extend_schema(
+    tags=["jobs"],
+)
 class JobViewSet(viewsets.ModelViewSet):
     queryset = Job.objects.select_related("company", "posted_by")
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -113,7 +120,9 @@ class JobViewSet(viewsets.ModelViewSet):
         serializer.save(posted_by=self.request.user)
 
 
-@extend_schema(tags=["applications"])
+@extend_schema(
+    tags=["applications"],
+)
 class JobApplicationViewSet(
     viewsets.GenericViewSet,
     mixins.CreateModelMixin,
@@ -135,7 +144,7 @@ class JobApplicationViewSet(
 
     def get_permissions(self):
         user = self.request.user
-        qs = super().get_queryset()
+        qs = super().get_permissions()
 
         if not user.is_authenticated:
             return qs.none()
@@ -155,7 +164,9 @@ class JobApplicationViewSet(
         serializer.save(applicant=user)
 
 
-@extend_schema(tags=["favorites"])
+@extend_schema(
+    tags=["favorites"],
+)
 class FavoriteViewSet(
     viewsets.GenericViewSet,
     mixins.CreateModelMixin,
@@ -178,14 +189,18 @@ class FavoriteViewSet(
         serializer.save(user=self.request.user)
 
 
-@extend_schema(tags=["users"])
+@extend_schema(
+    tags=["users"],
+)
 class UserListView(generics.ListAPIView):
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()
     permission_classes = [IsAuthenticated, IsAdminUserRole]
 
 
-@extend_schema(tags=["users"])
+@extend_schema(
+    tags=["users"],
+)
 class RegisterUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
