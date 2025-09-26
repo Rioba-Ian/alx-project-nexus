@@ -22,6 +22,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.db import models
 from drf_spectacular.utils import extend_schema
+from .filters import JobFilter
 
 
 class TenPerPagePagination(PageNumberPagination):
@@ -88,15 +89,16 @@ class CompanyViewSet(viewsets.ModelViewSet):
 class JobViewSet(viewsets.ModelViewSet):
     queryset = Job.objects.select_related("company", "posted_by")
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ["company__id", "location", "is_active"]
+    filterset_class = JobFilter
     search_fields = [
         "title",
         "description",
         "company__name",
         "location",
         "posted_by__email",
+        "category",
     ]
-    ordering_fields = ["title", "created_at"]
+    ordering_fields = ["title", "created_at", "salary", "min_experience_years"]
 
     def get_serializer_class(self):
         if self.action in ("create", "update", "partial_update"):
@@ -132,7 +134,7 @@ class JobApplicationViewSet(
 ):
     queryset = JobApplication.objects.select_related("job", "applicant")
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
-    filterset_fields = ["job__id", "status", "applicant__id"]
+    filterset_fields = ["job__id", "status", "applicant__id", "job__company__id"]
     search_fields = ["job__title", "applicant__email"]
     ordering_fields = ["created_at"]
     parser_classes = [MultiPartParser, FormParser]

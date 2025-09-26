@@ -50,6 +50,29 @@ class Company(models.Model):
         return self.name
 
 
+class ExperienceLevel(models.TextChoices):
+    INTERN = "intern", "Intern"
+    ENTRY = "entry", "Entry Level"
+    MID = "mid", "Mid Level"
+    SENIOR = "senior", "Senior"
+    LEAD = "lead", "Lead"
+
+
+class JobMode(models.TextChoices):
+    REMOTE = "remote", "Remote"
+    ONSITE = "onsite", "Onsite"
+    HYBRID = "hybrid", "Hybrid"
+    FULLTIME = "full-time", "Full-time"
+    CONTRACT = "contract", "Contract"
+    PARTTIME = "part-time", "Part-time"
+
+
+class Currency(models.TextChoices):
+    USD = "USD", "USD"
+    KES = "KES", "KES"
+    NGN = "NGN", "NGN"
+
+
 class Job(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -65,6 +88,28 @@ class Job(models.Model):
         CustomUser, on_delete=models.CASCADE, related_name="jobs"
     )
     is_active = models.BooleanField(default=True)
+    experience = models.CharField(
+        max_length=20,
+        choices=ExperienceLevel.choices,
+        blank=True,
+        null=True,
+    )
+    min_experience_years = models.IntegerField(blank=True, null=True)
+    max_experience_years = models.IntegerField(blank=True, null=True)
+    mode = models.CharField(
+        max_length=20,
+        choices=JobMode.choices,
+        blank=True,
+        null=True,
+    )
+    salary = models.PositiveIntegerField(blank=True, null=True)
+    salary_currency = models.CharField(
+        max_length=10,
+        choices=Currency.choices,
+        blank=True,
+        null=True,
+    )
+    category = models.CharField(max_length=200, blank=True, null=True)
 
     class Meta:
         ordering = ["-created_at"]
