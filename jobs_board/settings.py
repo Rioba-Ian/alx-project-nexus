@@ -209,8 +209,17 @@ SPECTACULAR_SETTINGS = {
         "name": "MIT License",
         "url": "https://opensource.org/licenses/MIT",
     },
-    "SERVE_INCLUDE_SCHEMA": False,  # For production, consider setting to False
+    "SERVE_INCLUDE_SCHEMA": False,
+    "SERVERS": [
+        {"url": "http://127.0.0.1:8000", "description": "Local server"},
+        {
+            "url": "https://jobs-board-alx.riobaian.space",
+            "description": "Staging server",
+        },
+        {"url": "https://example.com/api", "description": "Production server"},
+    ],
 }
+
 
 SWAGGER_SETTINGS = {
     "SECURITY_DEFINITIONS": {

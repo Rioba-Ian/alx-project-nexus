@@ -52,6 +52,13 @@ class JobCreateSerializer(serializers.ModelSerializer):
             "company_id",
             "location",
             "is_active",
+            "experience",
+            "min_experience_years",
+            "max_experience_years",
+            "mode",
+            "salary",
+            "salary_currency",
+            "category",
         ]
 
     def create(self, validated_data):
@@ -100,6 +107,14 @@ class JobSerializer(serializers.ModelSerializer):
 
     posted_by = serializers.StringRelatedField(read_only=True)
 
+    experience_display = serializers.CharField(
+        source="get_experience_display", read_only=True
+    )
+    mode_display = serializers.CharField(source="get_mode_display", read_only=True)
+    salary_currency_display = serializers.CharField(
+        source="get_salary_currency_display", read_only=True
+    )
+
     class Meta:
         model = Job
         fields = [
@@ -120,6 +135,9 @@ class JobSerializer(serializers.ModelSerializer):
             "salary",
             "salary_currency",
             "category",
+            "experience_display",
+            "mode_display",
+            "salary_currency_display",
         ]
 
 

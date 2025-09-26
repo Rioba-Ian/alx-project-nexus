@@ -145,16 +145,26 @@ class JobApplicationViewSet(
         return JobApplicationSerializer
 
     def get_permissions(self):
+        if self.action == "create":
+            return [IsAuthenticated()]
+        if self.action in ("update", "partial_update", "destroy"):
+            return [IsAuthenticated()]
+        if self.action == ("list", "retrieve"):
+            return [IsAuthenticated()]
+        return [AllowAny()]
+
+    def get_queryset(self):
         user = self.request.user
-        qs = super().get_permissions()
 
         if not user.is_authenticated:
-            return qs.none()
+            return JobApplication.objects.none()
+
+        # Superuser or admin -> see all applications
         if user.is_superuser or getattr(user, "role", None) == "admin":
-            return qs
+            return JobApplication.objects.all()
 
         company_ids = user.companies.values_list("id", flat=True)
-        return qs.filter(
+        return JobApplication.objects.filter(
             models.Q(applicant=user) | models.Q(job__company__in=company_ids)
         )
 
