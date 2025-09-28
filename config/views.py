@@ -124,6 +124,10 @@ class JobViewSet(viewsets.ModelViewSet):
 
 @extend_schema(
     tags=["applications"],
+    request={"multipart/form-data": JobApplicationSerializer},
+    responses={
+        201: JobApplicationSerializer,
+    },
 )
 class JobApplicationViewSet(
     viewsets.GenericViewSet,
@@ -210,9 +214,7 @@ class UserListView(generics.ListAPIView):
     permission_classes = [IsAuthenticated, IsAdminUserRole]
 
 
-@extend_schema(
-    tags=["users"],
-)
+@extend_schema(tags=["users"])
 class RegisterUserView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [AllowAny]

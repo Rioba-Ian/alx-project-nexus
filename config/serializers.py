@@ -5,17 +5,17 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 
 class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True)
+
     class Meta:
         model = CustomUser
-        fields = ["id", "username", "email", "phone", "role"]
+        fields = ["id", "username", "email", "phone", "role", "password"]
         read_only_fields = ["role"]
 
     def create(self, validated_data):
-        user = CustomUser(
-            email=validated_data["email"],
-            username=validated_data["username"],
-        )
-        user.set_password(validated_data["password"])
+        password = validated_data.pop("password")
+        user = CustomUser(**validated_data)
+        user.set_password(password)
         user.role = CustomUser.USER
         user.save()
         return user

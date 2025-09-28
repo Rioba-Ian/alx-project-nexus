@@ -9,7 +9,6 @@ from .views import (
 )
 from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from .serializers import CustomerTokenObtainPairView
-from django.views.generic import RedirectView
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
